@@ -2,6 +2,7 @@ import krakenex
 import pandas as pd
 import sqlite3
 import models
+import datetime
 
 
 
@@ -15,17 +16,25 @@ kraken = krakenex.API()
 def depth(pairs):
     df = pd.DataFrame(columns=["price", "volume", "timestamp", "type", "pair"])
     for pair in pairs:
-        response = kraken.query_public("Depth", {"pair": pair})['result']
-        cdf = response[list(response.keys())[0]]
-        asks = cdf['asks']
-        bids = cdf['bids']
-        bids = pd.DataFrame(bids, columns=["price", "volume", "timestamp"])
-        bids['type'] = "bid"
-        asks = pd.DataFrame(asks, columns=["price", "volume", "timestamp"])
-        asks['type'] = "ask"
-        cdf = pd.concat([bids, asks])
-        cdf['pair'] = pair
-        df = pd.concat([df, cdf])
+        try:
+            response = kraken.query_public("Depth", {"pair": pair})['result']
+            cdf = response[list(response.keys())[0]]
+            asks = cdf['asks']
+            bids = cdf['bids']
+            bids = pd.DataFrame(bids, columns=["price", "volume", "timestamp"])
+            bids['type'] = "bid"
+            asks = pd.DataFrame(asks, columns=["price", "volume", "timestamp"])
+            asks['type'] = "ask"
+            cdf = pd.concat([bids, asks])
+            cdf['time_scraped'] = datetime.datetime.now()
+            cdf['pair'] = pair
+            df = pd.concat([df, cdf])
+
+        except Exception as e:
+            print("Download failed \n", e)
+
+
+
 
 
     return df
@@ -36,7 +45,7 @@ def download_depth_chart(pairs):
     conn = sqlite3.connect('crypto.db')
     df = depth(pairs)
     df.to_sql('orderbook', con=conn, if_exists='append')
-    print("sraped")
+    # print("sraped")
 
 
 

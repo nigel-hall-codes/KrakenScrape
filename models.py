@@ -9,6 +9,8 @@ class OrderBook(Model):
     timestamp = IntegerField()
     type = TextField()
     pair = TextField()
+    time_scraped = DateTimeField()
+
 
     class Meta:
         database = db
